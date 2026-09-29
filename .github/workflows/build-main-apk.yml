@@ -1,0 +1,70 @@
+name: Build Main APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android_main/**'
+      - '.github/workflows/build-main-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android_main/release.keystore
+          ls -la android_main/release.keystore
+
+      - name: Build Release APK
+        working-directory: android_main
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Prepare output
+        run: |
+          mkdir -p output
+          cp android_main/app/build/outputs/apk/release/app-release.apk \
+             "output/HusseinGhallab-v${{ github.run_number }}.apk"
+          ls -lh output/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HusseinGhallab-APK
+          path: output/*.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: hussein-apk-v${{ github.run_number }}
+          name: "حسين غلاب — APK v${{ github.run_number }}"
+          body: |
+            ## تطبيق حسين غلاب AI
+
+            المطوّر: حسين غلاب
+            الموقع: https://abu-rami-app-s90e.onrender.com
+
+            ### التثبيت
+            1. حمّل ملف APK
+            2. افتحه على جهازك
+            3. اسمح بالتثبيت من مصادر غير معروفة
+            4. اضغط "تثبيت"
+          files: output/*.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
