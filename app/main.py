@@ -1,4 +1,7 @@
-import os
+# عدّل السطر
+git add app/main.py
+git commit -m "Fix: TemplateResponse signature"
+git push origin main --forceimport os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
