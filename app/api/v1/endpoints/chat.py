@@ -96,3 +96,33 @@ async def generate_video(req: dict):
         "message": "توليد الفيديو قيد التطوير. سيتم تفعيله في تحديث قادم.",
         "prompt": prompt,
     }
+from urllib.parse import quote
+
+
+@router.post("/generate/image")
+async def generate_image(req: dict):
+    """توليد صورة عبر Pollinations (مجاني بدون مفتاح)."""
+    prompt = (req or {}).get("prompt", "").strip()
+    if not prompt:
+        return {"success": False, "message": "الرجاء إدخال وصف الصورة"}
+
+    encoded = quote(prompt)
+    url = (
+        "https://image.pollinations.ai/prompt/"
+        + encoded
+        + "?width=1024&height=1024&nologo=true&model=flux&seed="
+        + str(abs(hash(prompt)) % 999999)
+    )
+    return {"success": True, "image_url": url, "prompt": prompt}
+
+
+@router.post("/generate/video")
+async def generate_video(req: dict):
+    prompt = (req or {}).get("prompt", "").strip()
+    if not prompt:
+        return {"success": False, "message": "الرجاء إدخال وصف الفيديو"}
+    return {
+        "success": False,
+        "message": "توليد الفيديو قيد التطوير. سيتم تفعيله في تحديث قادم.",
+        "prompt": prompt,
+    }
