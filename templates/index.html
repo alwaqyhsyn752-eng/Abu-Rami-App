@@ -2,155 +2,373 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#06b6d4">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>أبو رامي AI</title>
 <style>
 :root {
-  --bg-deep: #050b14;
+  --bg: #050b14;
+  --panel: rgba(10, 25, 47, 0.75);
   --cyan: #06b6d4;
   --sky: #38bdf8;
   --text: #f8fafc;
   --muted: #94a3b8;
   --danger: #ef4444;
   --success: #10b981;
+  --border: rgba(255,255,255,0.1);
 }
-* { box-sizing: border-box; margin: 0; padding: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
-    -webkit-tap-highlight-color: transparent; }
-body { background: var(--bg-deep); color: var(--text); height: 100vh;
-       display: flex; overflow: hidden; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
 
-/* Splash */
-#splash { position: fixed; inset: 0; background: #000; z-index: 2000;
-          display: flex; flex-direction: column; align-items: center;
-          justify-content: center; transition: opacity 0.8s; }
+/* ============ Splash ============ */
+#splash {
+  position: fixed; inset: 0;
+  z-index: 3000;
+  background: #000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity .6s;
+}
 #splash.hidden { opacity: 0; pointer-events: none; }
-#splash h1 { font-size: 2.8rem; font-weight: 900;
-             background: linear-gradient(45deg, #06b6d4, #38bdf8, #fff);
-             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-             filter: drop-shadow(0 0 15px var(--cyan)); margin-bottom: 12px; }
-#splash p { color: var(--muted); font-size: 1.1rem; margin-bottom: 30px; }
-#splash button { padding: 12px 40px; background: var(--cyan); border: none;
-                 border-radius: 24px; font-size: 1.1rem; font-weight: bold;
-                 cursor: pointer; }
+#splash h1 {
+  font-size: clamp(2rem, 9vw, 3.5rem);
+  font-weight: 900;
+  background: linear-gradient(45deg, #06b6d4, #38bdf8, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 18px var(--cyan));
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  from { filter: drop-shadow(0 0 10px var(--cyan)); }
+  to   { filter: drop-shadow(0 0 28px var(--sky)); }
+}
+#splash p { color: var(--muted); margin: 14px 20px 26px; text-align: center; font-size: 1rem; }
+#splash button {
+  padding: 14px 46px;
+  background: var(--cyan);
+  border: none;
+  border-radius: 28px;
+  color: #001;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  box-shadow: 0 0 30px rgba(6,182,212,0.55);
+}
 
-/* Layout */
-.app { display: flex; width: 100%; height: 100%; }
+/* ============ Layout ============ */
+.app {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
 
-/* Sidebar */
-.sidebar { width: 280px; background: rgba(6,182,212,0.04);
-           backdrop-filter: blur(12px);
-           border-left: 1px solid rgba(255,255,255,0.08);
-           padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.sidebar h2 { color: var(--cyan); font-size: 1.2rem; margin-bottom: 4px; }
-.status { font-size: 0.8rem; color: var(--muted); }
-.status span { color: var(--success); }
-.btn { padding: 10px; background: rgba(255,255,255,0.05); color: var(--text);
-       border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
-       cursor: pointer; font-size: 0.95rem; transition: all 0.2s;
-       display: flex; align-items: center; justify-content: center; gap: 8px; }
-.btn:hover { background: rgba(6,182,212,0.15); border-color: var(--cyan); }
-.btn.primary { background: var(--cyan); color: #000; border: none;
-               font-weight: bold; }
+/* ============ Sidebar ============ */
+.sidebar {
+  width: 280px;
+  background: rgba(6,182,212,0.04);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.sidebar h2 {
+  color: var(--cyan);
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+}
+.stat-row span:last-child { color: var(--success); font-weight: 600; }
+.side-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.btn {
+  padding: 11px 14px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all .2s;
+  text-align: right;
+  font-family: inherit;
+}
+.btn:hover, .btn:active { background: rgba(6,182,212,0.16); border-color: var(--cyan); }
+.btn.primary {
+  background: var(--cyan); color: #001; border: none; font-weight: 700;
+  justify-content: center;
+}
+.btn .ico { font-size: 1.15rem; }
+.conv-list {
+  flex: 1; overflow-y: auto; margin-top: 6px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.conv-item {
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conv-item:hover { border-color: var(--cyan); color: var(--text); }
 
-/* Main */
-.main { flex: 1; display: flex; flex-direction: column;
-        background: radial-gradient(circle at 50% 50%, #0f172a 0%, #050b14 100%); }
-.messages { flex: 1; overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; gap: 14px;
-            scroll-behavior: smooth; }
-.msg { max-width: 85%; padding: 14px 18px; border-radius: 16px;
-       line-height: 1.7; font-size: 0.98rem; word-wrap: break-word;
-       animation: fadeIn 0.3s ease; white-space: pre-wrap; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); }
-                    to { opacity: 1; transform: translateY(0); } }
-.msg.user { background: linear-gradient(135deg, #06b6d4, #0284c7);
-            color: #fff; align-self: flex-start;
-            border-bottom-right-radius: 4px; }
-.msg.assistant { background: rgba(255,255,255,0.06);
-                 backdrop-filter: blur(10px);
-                 border: 1px solid rgba(255,255,255,0.1);
-                 align-self: flex-end; border-bottom-left-radius: 4px; }
+/* ============ Main ============ */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 50%, #0f172a 0%, #050b14 100%);
+  overflow: hidden;
+}
+.topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(10,25,47,0.85);
+  border-bottom: 1px solid var(--border);
+}
+.topbar h1 { font-size: 1.1rem; color: var(--cyan); }
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+.msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  line-height: 1.7;
+  font-size: 0.98rem;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  animation: fade .25s ease;
+}
+@keyframes fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg.user {
+  background: linear-gradient(135deg, #06b6d4, #0284c7);
+  color: #fff;
+  align-self: flex-start;
+  border-bottom-right-radius: 4px;
+}
+.msg.assistant {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  align-self: flex-end;
+  border-bottom-left-radius: 4px;
+}
 .msg.error { color: var(--danger); border-color: var(--danger); }
+.msg.loading { opacity: 0.65; font-style: italic; }
 
-/* Input */
-.input-area { padding: 14px; background: rgba(10,25,47,0.85);
-              backdrop-filter: blur(20px);
-              border-top: 1px solid rgba(255,255,255,0.08);
-              display: flex; gap: 8px; align-items: flex-end; }
-textarea { flex: 1; height: 46px; min-height: 46px; max-height: 180px;
-           background: rgba(255,255,255,0.05);
-           border: 1px solid rgba(255,255,255,0.15);
-           border-radius: 23px; padding: 12px 18px; color: #fff;
-           resize: none; outline: none; font-size: 0.98rem; }
+/* ============ Input Bar ============ */
+.input-bar {
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+textarea {
+  flex: 1;
+  height: 46px;
+  min-height: 46px;
+  max-height: 160px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 23px;
+  padding: 12px 16px;
+  color: #fff;
+  resize: none;
+  outline: none;
+  font-size: 1rem;
+  font-family: inherit;
+}
 textarea:focus { border-color: var(--cyan); }
-.icon-btn { width: 46px; height: 46px; border-radius: 50%;
-            background: rgba(6,182,212,0.15); border: 1px solid var(--cyan);
-            color: var(--cyan); cursor: pointer; display: flex;
-            align-items: center; justify-content: center;
-            font-size: 1.3rem; transition: all 0.25s; flex-shrink: 0; }
-.icon-btn:hover { background: var(--cyan); color: #000;
-                  transform: scale(1.08); }
-.icon-btn.send { background: var(--cyan); color: #000; }
+.ibtn {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: rgba(6,182,212,0.14);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.ibtn:hover, .ibtn:active { background: var(--cyan); color: #001; }
+.ibtn.send { background: var(--cyan); color: #001; }
 
-/* Voice Overlay */
-#voice-overlay { position: fixed; inset: 0; z-index: 1500;
-                 background: rgba(5,11,20,0.95);
-                 backdrop-filter: blur(25px); display: none;
-                 flex-direction: column; align-items: center;
-                 justify-content: center; gap: 30px; }
-#voice-overlay.active { display: flex; }
-.orb { width: 140px; height: 140px; border-radius: 50%;
-       background: radial-gradient(circle, #38bdf8, #06b6d4);
-       filter: drop-shadow(0 0 30px var(--cyan));
-       animation: pulse 2s infinite alternate; }
-@keyframes pulse { 0% { transform: scale(0.9); }
-                   100% { transform: scale(1.15); } }
-#voice-text { color: var(--cyan); font-size: 1.2rem; text-align: center;
-              max-width: 80%; }
-#voice-heard { color: var(--muted); font-size: 1rem; text-align: center;
-               max-width: 80%; font-style: italic; }
+/* ============ Mobile ============ */
+@media (max-width: 720px) {
+  .sidebar { display: none; }
+  .sidebar.open {
+    display: flex;
+    position: fixed;
+    inset: 0 40% 0 0;
+    z-index: 2000;
+    background: #0a1730;
+    box-shadow: 0 0 40px rgba(0,0,0,0.7);
+  }
+  .topbar { display: flex; }
+  .msg { max-width: 92%; }
+}
 
-/* Modal */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-         z-index: 1600; display: none; align-items: center;
-         justify-content: center; padding: 16px; }
+/* ============ Voice Overlay ============ */
+#voice {
+  position: fixed; inset: 0;
+  z-index: 2500;
+  background: rgba(5,11,20,0.97);
+  backdrop-filter: blur(28px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 20px;
+  text-align: center;
+}
+#voice.active { display: flex; }
+.orb {
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #67e8f9, #06b6d4, #0369a1);
+  filter: drop-shadow(0 0 35px var(--cyan));
+  animation: pulse 1.6s infinite alternate;
+}
+.orb.thinking {
+  background: radial-gradient(circle at 30% 30%, #a78bfa, #7c3aed, #4c1d95);
+  filter: drop-shadow(0 0 35px #a78bfa);
+}
+@keyframes pulse {
+  0%   { transform: scale(0.92); }
+  100% { transform: scale(1.12); }
+}
+#voice-title { color: var(--cyan); font-size: 1.15rem; }
+#voice-heard {
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 92%;
+  min-height: 1.6em;
+  font-style: italic;
+}
+
+/* ============ Modal ============ */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 2600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
 .modal.active { display: flex; }
-.modal-body { width: 100%; max-width: 460px; background: #0f172a;
-              border: 1px solid var(--cyan); border-radius: 18px;
-              padding: 24px; display: flex; flex-direction: column; gap: 14px; }
-.modal-body h3 { color: var(--cyan); margin-bottom: 6px; }
-.modal-body input, .modal-body textarea {
-  width: 100%; background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.15); padding: 12px;
-  color: #fff; border-radius: 10px; font-size: 1rem;
-  font-family: inherit; outline: none;
+.modal-body {
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #0d1b2a;
+  border: 1px solid var(--cyan);
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-body h3 { color: var(--cyan); margin-bottom: 4px; }
+.modal-body label { font-size: 0.85rem; color: var(--muted); }
+.modal-body input,
+.modal-body textarea,
+.modal-body select {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.16);
+  padding: 12px;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
 }
 .modal-body input:focus, .modal-body textarea:focus { border-color: var(--cyan); }
+.modal-body textarea { min-height: 90px; resize: vertical; }
 
-/* Update Banner */
-#update-banner { position: fixed; top: 12px; left: 50%;
-                 transform: translateX(-50%);
-                 background: var(--cyan); color: #000;
-                 padding: 10px 20px; border-radius: 24px;
-                 font-weight: bold; z-index: 3000; cursor: pointer;
-                 display: none; box-shadow: 0 4px 20px rgba(6,182,212,0.5); }
-#update-banner.active { display: block; animation: slideDown 0.4s ease; }
-@keyframes slideDown { from { transform: translate(-50%, -60px); }
-                       to { transform: translate(-50%, 0); } }
-
-/* Mobile */
-@media (max-width: 700px) {
-  .sidebar { display: none; }
+/* ============ Update Banner ============ */
+#update {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--cyan);
+  color: #001;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-weight: 700;
+  z-index: 3500;
+  cursor: pointer;
+  display: none;
+  box-shadow: 0 4px 24px rgba(6,182,212,0.5);
+}
+#update.active { display: block; animation: slide 0.4s ease; }
+@keyframes slide {
+  from { transform: translate(-50%, -70px); }
+  to   { transform: translate(-50%, 0); }
 }
 </style>
 </head>
 <body>
 
-<div id="update-banner" onclick="location.reload(true)">
-  تحديث جديد متاح — اضغط للتحديث
-</div>
+<div id="update" onclick="location.reload(true)">تحديث جديد متاح — اضغط للتحديث</div>
 
 <div id="splash">
   <h1>أبو رامي AI</h1>
@@ -159,235 +377,385 @@ textarea:focus { border-color: var(--cyan); }
 </div>
 
 <div class="app">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <h2>أبو رامي AI</h2>
-    <div class="status">الحالة: <span id="status-text">جاري الفحص...</span></div>
-    <div class="status">الإصدار: <span id="version-text">-</span></div>
-    <button class="btn" onclick="newChat()">محادثة جديدة</button>
-    <button class="btn" onclick="openAppModal()">توليد تطبيق</button>
-    <button class="btn" onclick="checkUpdate(true)">فحص التحديثات</button>
+    <div class="stat-row"><span>الحالة</span><span id="s-status">...</span></div>
+    <div class="stat-row"><span>الإصدار</span><span id="s-ver">-</span></div>
+    <div class="stat-row"><span>المزوّد</span><span id="s-prov">-</span></div>
+
+    <div class="side-buttons">
+      <button class="btn primary" onclick="newChat()">
+        <span class="ico">＋</span> محادثة جديدة
+      </button>
+      <button class="btn" onclick="openModal('app')">
+        <span class="ico">📱</span> توليد تطبيق
+      </button>
+      <button class="btn" onclick="openModal('image')">
+        <span class="ico">🖼️</span> توليد صورة
+      </button>
+      <button class="btn" onclick="openModal('video')">
+        <span class="ico">🎬</span> توليد فيديو
+      </button>
+      <button class="btn" onclick="checkUpdate(true)">
+        <span class="ico">🔄</span> فحص التحديثات
+      </button>
+    </div>
+
+    <h2 style="margin-top:14px; font-size:0.95rem;">سجل المحادثات</h2>
+    <div class="conv-list" id="conv-list">
+      <div class="conv-item">محادثة حالية</div>
+    </div>
   </aside>
 
   <main class="main">
-    <div class="messages" id="messages">
-      <div class="msg assistant">مرحباً بك! أنا أبو رامي AI. يمكنني مساعدتك في البرمجة، الإجابة عن الأسئلة، وتوليد تطبيقات كاملة. كيف أخدمك؟</div>
+    <div class="topbar">
+      <button class="ibtn" onclick="toggleSidebar()" style="width:38px;height:38px;font-size:1rem;">☰</button>
+      <h1>أبو رامي AI</h1>
+      <button class="ibtn" onclick="newChat()" style="width:38px;height:38px;font-size:1rem;">＋</button>
     </div>
 
-    <div class="input-area">
-      <button class="icon-btn" onclick="toggleVoice()" title="محادثة صوتية">🎙️</button>
+    <div class="messages" id="messages">
+      <div class="msg assistant">مرحباً بك في أبو رامي AI. كيف أخدمك اليوم؟</div>
+    </div>
+
+    <div class="input-bar">
+      <button class="ibtn" onclick="toggleVoice()" title="محادثة صوتية">🎙️</button>
       <textarea id="input" placeholder="اكتب رسالتك..." rows="1"></textarea>
-      <button class="icon-btn send" onclick="send()" title="إرسال">➤</button>
+      <button class="ibtn send" onclick="send()" title="إرسال">➤</button>
     </div>
   </main>
 </div>
 
-<div id="voice-overlay">
-  <div class="orb"></div>
-  <div id="voice-text">جاري الاستماع...</div>
+<!-- Voice Overlay -->
+<div id="voice">
+  <div class="orb" id="orb"></div>
+  <div id="voice-title">جاري الاستماع...</div>
   <div id="voice-heard"></div>
-  <button class="btn primary" onclick="toggleVoice()" style="padding: 12px 30px;">إيقاف</button>
+  <button class="btn primary" onclick="toggleVoice()" style="padding:12px 34px;">إيقاف</button>
 </div>
 
-<div class="modal" id="app-modal">
+<!-- Modal: App Generator -->
+<div class="modal" id="modal-app">
   <div class="modal-body">
-    <h3>توليد تطبيق جديد</h3>
-    <input id="app-name" placeholder="اسم التطبيق (مثال: Notes App)" />
-    <textarea id="app-desc" rows="4" placeholder="اوصف التطبيق: ماذا يفعل؟ ما شاشته؟"></textarea>
-    <button class="btn primary" onclick="generateApp()" style="padding: 14px;">توليد التطبيق</button>
-    <button class="btn" onclick="closeAppModal()">إلغاء</button>
+    <h3>📱 توليد تطبيق جديد</h3>
+    <label>اسم التطبيق</label>
+    <input id="app-name" placeholder="مثال: Notes App" />
+    <label>وصف التطبيق</label>
+    <textarea id="app-desc" placeholder="ماذا يفعل التطبيق؟ ما شاشته؟ ما ميزاته؟"></textarea>
+    <button class="btn primary" onclick="generateApp()" style="padding:14px;">توليد التطبيق</button>
+    <button class="btn" onclick="closeModal('app')">إلغاء</button>
+  </div>
+</div>
+
+<!-- Modal: Image -->
+<div class="modal" id="modal-image">
+  <div class="modal-body">
+    <h3>🖼️ توليد صورة</h3>
+    <label>وصف الصورة</label>
+    <textarea id="img-prompt" placeholder="مثال: قطة فضائية ترتدي خوذة، بأسلوب سايبربانك، ألوان نيون"></textarea>
+    <button class="btn primary" onclick="generateImage()" style="padding:14px;">توليد الصورة</button>
+    <button class="btn" onclick="closeModal('image')">إلغاء</button>
+  </div>
+</div>
+
+<!-- Modal: Video -->
+<div class="modal" id="modal-video">
+  <div class="modal-body">
+    <h3>🎬 توليد فيديو</h3>
+    <label>وصف الفيديو</label>
+    <textarea id="vid-prompt" placeholder="مثال: فيديو لمدينة مستقبلية تطير فيها السيارات بين الأبراج المضيئة"></textarea>
+    <button class="btn primary" onclick="generateVideo()" style="padding:14px;">توليد الفيديو</button>
+    <button class="btn" onclick="closeModal('video')">إلغاء</button>
   </div>
 </div>
 
 <script>
-const $ = (id) => document.getElementById(id);
-let currentConv = null;
-let currentVersion = null;
+"use strict";
 
+var $ = function(id) { return document.getElementById(id); };
+var currentConv = null;
+var currentVersion = null;
+var voiceEnabled = false;
+var recognition = null;
+
+/* ============ Splash ============ */
 function closeSplash() { $('splash').classList.add('hidden'); }
 
-async function checkStatus() {
-  try {
-    const r = await fetch('/v1/system/status');
-    if (r.ok) {
-      const d = await r.json();
-      $('status-text').innerText = 'متصل';
-      $('status-text').style.color = '#10b981';
-      $('version-text').innerText = d.version || '-';
+/* ============ Sidebar (mobile) ============ */
+function toggleSidebar() {
+  $('sidebar').classList.toggle('open');
+}
+
+/* ============ Status ============ */
+function checkStatus() {
+  fetch('/v1/system/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      $('s-status').innerText = 'متصل';
+      $('s-ver').innerText = d.version || '-';
       currentVersion = d.version;
-    }
-  } catch (e) {
-    $('status-text').innerText = 'غير متصل';
-    $('status-text').style.color = '#ef4444';
-  }
+      if (d.providers) {
+        var active = [];
+        if (d.providers.gemini) active.push('Gemini');
+        if (d.providers.groq) active.push('Groq');
+        if (d.providers.openrouter) active.push('OpenRouter');
+        if (d.providers.deepseek) active.push('DeepSeek');
+        $('s-prov').innerText = active.length ? active[0] : 'لا يوجد';
+      }
+    })
+    .catch(function() {
+      $('s-status').innerText = 'غير متصل';
+      $('s-status').style.color = '#ef4444';
+    });
 }
 checkStatus();
 
-async function checkUpdate(manual) {
-  try {
-    const r = await fetch('/version?t=' + Date.now());
-    const d = await r.json();
-    if (currentVersion && d.version && d.version !== currentVersion) {
-      $('update-banner').classList.add('active');
-      if (manual) alert('يوجد تحديث جديد: ' + d.version);
-    } else if (manual) {
-      alert('أنت على أحدث إصدار: ' + d.version);
-    }
-  } catch (e) {
-    if (manual) alert('تعذر فحص التحديثات');
-  }
+/* ============ Auto Update Check ============ */
+function checkUpdate(manual) {
+  fetch('/version?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (currentVersion && d.version && d.version !== currentVersion) {
+        $('update').classList.add('active');
+        if (manual) alert('يوجد تحديث جديد: ' + d.version);
+      } else if (manual) {
+        alert('أنت على أحدث إصدار: ' + d.version);
+      }
+    })
+    .catch(function() {
+      if (manual) alert('تعذر فحص التحديثات');
+    });
 }
-setInterval(() => checkUpdate(false), 60000);
+setInterval(function() { checkUpdate(false); }, 60000);
 
-function escapeHtml(text) {
-  const d = document.createElement('div');
-  d.textContent = text;
+/* ============ Messages ============ */
+function escapeHtml(t) {
+  var d = document.createElement('div');
+  d.textContent = t;
   return d.innerHTML;
 }
 
 function addMsg(text, cls) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + cls;
+  var div = document.createElement('div');
+  div.className = 'msg ' + (cls || 'assistant');
   div.textContent = text;
   $('messages').appendChild(div);
   $('messages').scrollTop = $('messages').scrollHeight;
   return div;
 }
 
-async function send() {
-  const text = $('input').value.trim();
+function addHtmlMsg(html, cls) {
+  var div = document.createElement('div');
+  div.className = 'msg ' + (cls || 'assistant');
+  div.innerHTML = html;
+  $('messages').appendChild(div);
+  $('messages').scrollTop = $('messages').scrollHeight;
+  return div;
+}
+
+/* ============ Send ============ */
+function send() {
+  var text = $('input').value.trim();
   if (!text) return;
 
   addMsg(text, 'user');
   $('input').value = '';
   $('input').style.height = '46px';
 
-  const thinking = addMsg('... جاري التفكير', 'assistant');
-  thinking.style.opacity = '0.6';
+  var loading = addMsg('جاري التفكير...', 'assistant loading');
 
-  try {
-    const r = await fetch('/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, conversation_id: currentConv })
-    });
-    const d = await r.json();
+  fetch('/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text, conversation_id: currentConv })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
     if (d.conversation_id) currentConv = d.conversation_id;
-    thinking.remove();
+    loading.remove();
     addMsg(d.message || 'لا يوجد رد', 'assistant');
     if (voiceEnabled) speak(d.message || '');
-  } catch (e) {
-    thinking.remove();
-    addMsg('تعذر الاتصال بالخادم. حاول مرة أخرى.', 'assistant error');
-  }
+  })
+  .catch(function() {
+    loading.remove();
+    addMsg('تعذر الاتصال بالخادم.', 'assistant error');
+  });
 }
 
 function newChat() {
   currentConv = null;
-  $('messages').innerHTML = '<div class="msg assistant">محادثة جديدة بدأت. كيف أخدمك؟</div>';
+  $('messages').innerHTML = '<div class="msg assistant">بدأت محادثة جديدة. تفضل بسؤالك.</div>';
+  $('sidebar').classList.remove('open');
 }
 
-// Voice
-let recognition = null;
-let voiceEnabled = false;
-
+/* ============ Voice ============ */
 function toggleVoice() {
-  const overlay = $('voice-overlay');
-  const isActive = overlay.classList.contains('active');
+  var overlay = $('voice');
+  var active = overlay.classList.contains('active');
 
-  if (!isActive) {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+  if (!active) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
       alert('المتصفح لا يدعم التعرف على الصوت');
       return;
     }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SR();
     recognition.lang = 'ar-SA';
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    recognition.onresult = (e) => {
-      let text = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+    recognition.onresult = function(e) {
+      var text = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
         text += e.results[i][0].transcript;
       }
       $('voice-heard').innerText = text;
       if (e.results[e.results.length - 1].isFinal) {
-        $('input').value = text.trim();
         overlay.classList.remove('active');
-        recognition.stop();
+        try { recognition.stop(); } catch (err) {}
         voiceEnabled = true;
+        $('input').value = text.trim();
         send();
       }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = function() {
       overlay.classList.remove('active');
     };
 
-    recognition.start();
-    overlay.classList.add('active');
-    $('voice-text').innerText = 'جاري الاستماع... تحدث الآن';
-    $('voice-heard').innerText = '';
+    try {
+      recognition.start();
+      overlay.classList.add('active');
+      $('voice-title').innerText = 'تحدث الآن...';
+      $('voice-heard').innerText = '';
+    } catch (e) {
+      alert('تعذر تشغيل الميكروفون');
+    }
   } else {
     overlay.classList.remove('active');
-    if (recognition) recognition.stop();
+    try { recognition.stop(); } catch (e) {}
   }
 }
 
 function speak(text) {
   if (!('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(text);
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
   u.lang = 'ar-SA';
   u.rate = 1.0;
   window.speechSynthesis.speak(u);
 }
 
-// App Generator
-function openAppModal() { $('app-modal').classList.add('active'); }
-function closeAppModal() { $('app-modal').classList.remove('active'); }
+/* ============ Modal ============ */
+function openModal(name) { $('modal-' + name).classList.add('active'); }
+function closeModal(name) { $('modal-' + name).classList.remove('active'); }
 
-async function generateApp() {
-  const name = $('app-name').value.trim();
-  const desc = $('app-desc').value.trim();
-  if (!name || !desc) { alert('الرجاء إدخال الاسم والوصف'); return; }
+/* ============ App Generator ============ */
+function generateApp() {
+  var name = $('app-name').value.trim();
+  var desc = $('app-desc').value.trim();
+  if (!name || !desc) { alert('أدخل الاسم والوصف'); return; }
 
-  closeAppModal();
+  closeModal('app');
   addMsg('طلب توليد تطبيق: ' + name, 'user');
-  const loading = addMsg('جاري بناء تطبيقك... قد يستغرق 20 ثانية', 'assistant');
+  var loading = addMsg('جاري بناء التطبيق... قد يستغرق 20 ثانية', 'assistant loading');
 
-  try {
-    const r = await fetch('/v1/generate/app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_name: name, description: desc })
-    });
-    const d = await r.json();
+  fetch('/v1/generate/app', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ app_name: name, description: desc })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
     loading.remove();
     if (d.app_url) {
-      const link = '<div class="msg assistant">تم توليد التطبيق بنجاح!<br>'
-        + '<a href="' + d.app_url + '" target="_blank" '
-        + 'style="color:#06b6d4; font-weight:bold;">'
-        + 'اضغط لفتح التطبيق</a>'
-        + '<br><small style="color:#94a3b8;">'
-        + 'افتحه في Chrome ← ⋮ ← إضافة إلى الشاشة الرئيسية</small></div>';
-      $('messages').insertAdjacentHTML('beforeend', link);
-      $('messages').scrollTop = $('messages').scrollHeight;
+      addHtmlMsg(
+        'تم توليد التطبيق بنجاح!<br>' +
+        '<a href="' + d.app_url + '" target="_blank" style="color:#06b6d4;font-weight:bold;">افتح التطبيق</a><br>' +
+        '<small style="color:#94a3b8;">افتحه في Chrome ← ⋮ ← إضافة إلى الشاشة الرئيسية</small>',
+        'assistant'
+      );
     } else {
       addMsg('تعذر توليد التطبيق.', 'assistant error');
     }
-  } catch (e) {
+  })
+  .catch(function(e) {
     loading.remove();
     addMsg('فشل التوليد: ' + e.message, 'assistant error');
-  }
+  });
 }
 
-// Input autosize
-$('input').addEventListener('input', function () {
+/* ============ Image Generator ============ */
+function generateImage() {
+  var prompt = $('img-prompt').value.trim();
+  if (!prompt) { alert('أدخل وصف الصورة'); return; }
+
+  closeModal('image');
+  addMsg('توليد صورة: ' + prompt, 'user');
+  var loading = addMsg('جاري توليد الصورة...', 'assistant loading');
+
+  fetch('/v1/generate/image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: prompt })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    loading.remove();
+    if (d.image_url) {
+      addHtmlMsg(
+        '<img src="' + d.image_url + '" style="max-width:100%;border-radius:12px;" /><br>' +
+        '<a href="' + d.image_url + '" download style="color:#06b6d4;">تحميل الصورة</a>'
+      );
+    } else {
+      addMsg(d.message || 'تعذر توليد الصورة حالياً.', 'assistant error');
+    }
+  })
+  .catch(function(e) {
+    loading.remove();
+    addMsg('فشل: ' + e.message, 'assistant error');
+  });
+}
+
+/* ============ Video Generator ============ */
+function generateVideo() {
+  var prompt = $('vid-prompt').value.trim();
+  if (!prompt) { alert('أدخل وصف الفيديو'); return; }
+
+  closeModal('video');
+  addMsg('توليد فيديو: ' + prompt, 'user');
+  var loading = addMsg('جاري توليد الفيديو...', 'assistant loading');
+
+  fetch('/v1/generate/video', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: prompt })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    loading.remove();
+    if (d.video_url) {
+      addHtmlMsg(
+        '<video src="' + d.video_url + '" controls style="max-width:100%;border-radius:12px;"></video><br>' +
+        '<a href="' + d.video_url + '" download style="color:#06b6d4;">تحميل الفيديو</a>'
+      );
+    } else {
+      addMsg(d.message || 'توليد الفيديو غير متاح على هذه الخطة.', 'assistant error');
+    }
+  })
+  .catch(function(e) {
+    loading.remove();
+    addMsg('فشل: ' + e.message, 'assistant error');
+  });
+}
+
+/* ============ Input UX ============ */
+$('input').addEventListener('input', function() {
   this.style.height = '46px';
-  this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+  this.style.height = Math.min(this.scrollHeight, 160) + 'px';
 });
 
-$('input').addEventListener('keydown', function (e) {
+$('input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     send();

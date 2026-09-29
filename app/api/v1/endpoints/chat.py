@@ -62,3 +62,37 @@ async def generate_app(
         "app_url": url,
         "full_url": url,
     }
+@router.post("/generate/image")
+async def generate_image(req: dict):
+    """
+    توليد صورة من وصف نصي.
+    يستخدم واجهة Pollinations المجانية (بدون مفتاح API).
+    """
+    prompt = (req or {}).get("prompt", "").strip()
+    if not prompt:
+        return {"success": False, "message": "الرجاء إدخال وصف الصورة"}
+
+    from urllib.parse import quote
+    encoded = quote(prompt)
+    url = (
+        "https://image.pollinations.ai/prompt/"
+        + encoded
+        + "?width=1024&height=1024&nologo=true&model=flux"
+    )
+    return {"success": True, "image_url": url, "prompt": prompt}
+
+
+@router.post("/generate/video")
+async def generate_video(req: dict):
+    """
+    توليد فيديو — يعيد رسالة توضيحية لأن الخدمات المجانية محدودة.
+    يمكن تفعيلها لاحقاً عبر API مدفوع مثل Runway أو Pika.
+    """
+    prompt = (req or {}).get("prompt", "").strip()
+    if not prompt:
+        return {"success": False, "message": "الرجاء إدخال وصف الفيديو"}
+    return {
+        "success": False,
+        "message": "توليد الفيديو قيد التطوير. سيتم تفعيله في تحديث قادم.",
+        "prompt": prompt,
+    }
