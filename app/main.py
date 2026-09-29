@@ -58,7 +58,19 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/")
+async def read_choice(request: Request):
+    """شاشة اختيار الواجهة."""
+    response = templates.TemplateResponse(
+        request=request, name="choice.html",
+        context={"version": settings.APP_VERSION}
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@app.get("/abu-rami")
 async def read_root(request: Request):
+    """واجهة أبو رامي الكلاسيكية."""
     response = templates.TemplateResponse(
         request=request, name="index.html",
         context={"version": settings.APP_VERSION}
@@ -68,6 +80,16 @@ async def read_root(request: Request):
     response.headers["Expires"] = "0"
     return response
 
+
+@app.get("/olq")
+async def read_olq(request: Request):
+    """واجهة أبو عولق المستقبلية."""
+    response = templates.TemplateResponse(
+        request=request, name="abu_olq.html",
+        context={"version": settings.APP_VERSION}
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 @app.get("/olq")
 async def read_olq(request: Request):
     response = templates.TemplateResponse(
