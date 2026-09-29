@@ -25,7 +25,6 @@ jobs:
       - name: Accept Android SDK Licenses
         run: |
           export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           mkdir -p $ANDROID_HOME/licenses
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $ANDROID_HOME/licenses/android-sdk-license
           echo "84831b9409646a918e30573bab4c9c91346d8abd" > $ANDROID_HOME/licenses/android-sdk-preview-license
@@ -34,10 +33,11 @@ jobs:
           echo "859f317696f67ef3d7f30a50a5560e7834b43903" > $ANDROID_HOME/licenses/android-googletv-license
           echo "601085b94cd77f0b54ff86406957099ebe79c4d6" > $ANDROID_HOME/licenses/android-sdk-arm-dbt-license
           echo "e9acab5b5fbb560a72cfaecce8946896ff6aab9d" > $ANDROID_HOME/licenses/mips-android-sysimage-license
-          echo "SDK licenses accepted"
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.5
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
 
       - name: Restore keystore
         run: |
@@ -49,7 +49,7 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle assembleRelease --no-daemon --stacktrace --warning-mode all
 
       - name: Prepare output
         run: |
@@ -72,6 +72,5 @@ jobs:
           body: |
             ## تطبيق حسين غلاب AI
             المطور: حسين غلاب
-            الموقع: https://abu-rami-app-s90e.onrender.com
           files: output/*.apk
           token: ${{ secrets.GITHUB_TOKEN }}
