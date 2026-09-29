@@ -100,6 +100,18 @@ async def read_olq(request: Request):
     return response
 
 
+
+
+@app.get("/programming")
+async def read_programming(request: Request):
+    response = templates.TemplateResponse(
+        request=request, name="programming.html",
+        context={"version": settings.APP_VERSION}
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": settings.APP_VERSION}

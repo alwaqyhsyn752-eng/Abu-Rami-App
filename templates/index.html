@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#020617">
 <link rel="manifest" href="/static/manifest.json">
-<title>أبو رامي AI</title>
+<title>أبو رامي AI — حسين غلاب</title>
 <style>
 :root{--bg:#020617;--glass:rgba(15,23,42,0.85);--cyan:#06b6d4;--sky:#38bdf8;--text:#f8fafc;--muted:#94a3b8;--danger:#ef4444;--ok:#10b981;--border:rgba(6,182,212,0.25)}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
@@ -106,14 +106,14 @@ textarea:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(6,182,212,0.25)
 
 <!-- PWA install bar -->
 <div id="install-bar">
-  <span>📲 ثبّت أبو رامي AI على جهازك كتطبيق</span>
+  <span>◉ ثبّت أبو رامي AI — حسين غلاب على جهازك كتطبيق</span>
   <button onclick="installPWA()">تثبيت</button>
 </div>
 
 <div id="splash">
   <canvas id="splashCanvas"></canvas>
   <div id="splashInfo">
-    <h1>أبو رامي AI</h1>
+    <h1>أبو رامي AI — حسين غلاب</h1>
     <p>لسنا الوحيدين، لكن الأفضل بذكاء</p>
     <button onclick="closeSplash()">ابدأ الآن</button>
   </div>
@@ -123,7 +123,7 @@ textarea:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(6,182,212,0.25)
 
 <div class="app">
   <aside class="sidebar collapsed" id="sidebar">
-    <h2><span><span class="deco">❖</span> أبو رامي AI</span>
+    <h2><span><span class="deco">❖</span> أبو رامي AI — حسين غلاب</span>
       <button class="ibtn" style="width:30px;height:30px;border:none;background:transparent;font-size:.9rem" onclick="toggleSidebar()"><span class="deco">✖</span></button>
     </h2>
     <div class="stat"><span>الحالة</span><span id="s-status">...</span></div>
@@ -142,7 +142,7 @@ textarea:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(6,182,212,0.25)
   <main class="main">
     <div class="topbar">
       <button class="ibtn" style="width:38px;height:38px" onclick="toggleSidebar()"><span class="deco">❖</span></button>
-      <div class="brand"><span class="deco">◈</span> أبو رامي AI</div>
+      <div class="brand"><span class="deco">◈</span> أبو رامي AI — حسين غلاب</div>
       <button class="ibtn" style="width:38px;height:38px" onclick="newChat()"><span class="deco">＋</span></button>
     </div>
 
@@ -155,7 +155,7 @@ textarea:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(6,182,212,0.25)
     </div>
 
     <div class="messages" id="messages">
-      <div class="msg assistant"><span class="deco">✦</span> مرحباً بك في أبو رامي AI. اضغط <b>❖ تطبيق APK</b> لتوليد تطبيق أندرويد حقيقي وتحميله، أو <b>↧ تثبيت</b> لتنصيب هذا التطبيق على هاتفك مباشرة.</div>
+      <div class="msg assistant"><span class="deco">✦</span> مرحباً بك في أبو رامي AI — حسين غلاب. اضغط <b>❖ تطبيق APK</b> لتوليد تطبيق أندرويد حقيقي وتحميله، أو <b>↧ تثبيت</b> لتنصيب هذا التطبيق على هاتفك مباشرة.</div>
     </div>
 
     <div class="input-area">
@@ -237,7 +237,7 @@ var recognition = null;
     octx.font = '900 ' + fs + 'px system-ui,sans-serif';
     octx.textAlign = 'center'; octx.textBaseline = 'middle';
     octx.fillStyle = '#fff';
-    octx.fillText('أبو رامي AI', ow/2, oh/2);
+    octx.fillText('أبو رامي AI — حسين غلاب', ow/2, oh/2);
     var img = octx.getImageData(0,0,ow,oh);
     targets = [];
     var ox = (W-ow)/2, oy = H/2-oh/2;
@@ -535,7 +535,7 @@ function generateApp(){
         '</div>' +
         '<div class="apk-hint">' +
           '<b>⚡ الأسرع:</b> افتح التطبيق ← Chrome ← ⋮ ← <b>تثبيت التطبيق</b> — يعمل كتطبيق أصلي خلال 5 ثوانٍ.<br><br>' +
-          '<b>📦 APK حقيقي:</b> اضغط <b>تحميل APK حقيقي</b> → تنتقل إلى <b>PWABuilder</b> (خدمة Microsoft الرسمية المجانية) → اضغط <b>Package for stores</b> → اختر <b>Android</b> → حمّل ملف APK الموقّع وثبّته على جهازك مثل أي تطبيق.<br><br>' +
+          '<b>▣ APK حقيقي:</b> اضغط <b>تحميل APK حقيقي</b> → تنتقل إلى <b>PWABuilder</b> (خدمة Microsoft الرسمية المجانية) → اضغط <b>Package for stores</b> → اختر <b>Android</b> → حمّل ملف APK الموقّع وثبّته على جهازك مثل أي تطبيق.<br><br>' +
           '<b>ملاحظة:</b> توليد APK داخل السيرفر يحتاج Android SDK + Java + Gradle (~4 جيجا) وهذا يتجاوز حدود الخطة المجانية. PWABuilder يقوم بنفس المهمة بجودة احترافية وموقّعة.' +
         '</div>' +
       '</div>'

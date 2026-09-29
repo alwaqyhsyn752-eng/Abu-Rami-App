@@ -3,7 +3,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "أبو رامي AI"
+    PROJECT_NAME: str = "حسين غلاب — Hussein Ghallab System"
+    APP_DEVELOPER: str = "حسين غلاب"
+    APP_TAGLINE: str = "من المستقبل — بلغة الحاضر"
 
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""

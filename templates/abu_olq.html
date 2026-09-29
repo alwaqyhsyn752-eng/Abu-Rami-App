@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0a0520">
-<title>أبو عولق — من المستقبل</title>
+<title>حسين غلاب — من المستقبل</title>
 <style>
 :root{
   --bg:#0a0520;
@@ -168,6 +168,7 @@ textarea::placeholder{color:var(--muted)}
   .msg{max-width:92%}
 }
 </style>
+<script src="/static/storage.js"></script>
 </head>
 <body>
 
@@ -176,8 +177,8 @@ textarea::placeholder{color:var(--muted)}
 <div id="splash">
   <canvas id="splashCanvas"></canvas>
   <div id="splashInfo">
-    <h1>ABU OLQ</h1>
-    <p>أبو عولق — من المستقبل بلغة الحاضر</p>
+    <h1>HUSSEIN GHALLAB</h1>
+    <p>حسين غلاب — من المستقبل بلغة الحاضر</p>
     <button onclick="closeSplash()">ادخل الآن</button>
   </div>
 </div>
@@ -187,7 +188,7 @@ textarea::placeholder{color:var(--muted)}
 <div class="app">
   <aside class="sidebar collapsed" id="sidebar">
     <div class="brand-row">
-      <div class="brand-name">ABU OLQ</div>
+      <div class="brand-name">HUSSEIN GHALLAB</div>
       <button class="ibtn" style="width:32px;height:32px;font-size:1rem" onclick="toggleSidebar()">✕</button>
     </div>
     <div class="stat"><span>الحالة</span><span id="s-status">...</span></div>
@@ -195,10 +196,12 @@ textarea::placeholder{color:var(--muted)}
     <div class="stat"><span>المزوّد</span><span id="s-prov">-</span></div>
     <div class="stat"><span>الوضع</span><span id="s-mode">عادي</span></div>
 
-    <div class="side-title">الأدوات</div>
+    <div style="padding:12px 10px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(168,85,247,0.08));border:1px solid rgba(251,191,36,0.3);border-radius:10px;text-align:center;margin:8px 0"><div style="font-size:.7rem;color:#a0aec0;letter-spacing:1px">المطوّر</div><div style="font-size:1rem;font-weight:800;color:#fbbf24;letter-spacing:1px;margin-top:4px">حسين غلاب</div></div>
+<div class="side-title">الأدوات</div>
     <button class="btn" onclick="newChat()"><span class="ic">＋</span> محادثة جديدة</button>
     <button class="btn" onclick="openModal('telegram')"><span class="ic">◈</span> ربط Telegram</button>
     <button class="btn" onclick="openModal('termux')"><span class="ic">⌘</span> مساعد Termux</button>
+    <a href="/programming" class="btn" style="text-decoration:none"><span class="ic">&#8984;</span> مساعد البرمجة الكامل</a>
     <button class="btn" onclick="openModal('code')"><span class="ic">◆</span> مساعد الكود</button>
     <button class="btn" onclick="openModal('app')"><span class="ic">▣</span> توليد APK</button>
     <button class="btn" onclick="openModal('image')"><span class="ic">◉</span> توليد صورة</button>
@@ -209,27 +212,27 @@ textarea::placeholder{color:var(--muted)}
   <main class="main">
     <div class="topbar">
       <button class="ibtn" style="width:40px;height:40px" onclick="toggleSidebar()">☰</button>
-      <div class="brand-mid">◆ ABU OLQ</div>
+      <div class="brand-mid">◆ HUSSEIN GHALLAB</div>
       <button class="ibtn" style="width:40px;height:40px" onclick="newChat()">＋</button>
     </div>
 
     <div class="modes-row" id="modes">
       <button class="mode active" data-mode="normal"><span class="ic">◆</span> تفكير عادي</button>
       <button class="mode" data-mode="fast"><span class="ic">⚡</span> تفكير سريع</button>
-      <button class="mode" data-mode="deep"><span class="ic">🔬</span> تفكير عميق</button>
-      <button class="mode" data-mode="expert"><span class="ic">🎓</span> وضع الخبير</button>
-      <button class="mode" data-mode="expanded"><span class="ic">🌐</span> تفكير موسّع</button>
-      <button class="mode" data-mode="search"><span class="ic">🔍</span> بحث ويب</button>
+      <button class="mode" data-mode="deep"><span class="ic">◆</span> تفكير عميق</button>
+      <button class="mode" data-mode="expert"><span class="ic">◆</span> وضع الخبير</button>
+      <button class="mode" data-mode="expanded"><span class="ic">◇</span> تفكير موسّع</button>
+      <button class="mode" data-mode="search"><span class="ic">◉</span> بحث ويب</button>
       <button class="mode" data-mode="termux"><span class="ic">⌘</span> مساعد Termux</button>
     </div>
 
     <div class="messages" id="messages">
-      <div class="msg assistant">مرحباً بك في <b>أبو عولق</b> — المساعد المستقبلي متعدد الأوضاع. اختر وضع التفكير من الشريط أعلاه، أو اكتب سؤالك مباشرة. يمكنني: البرمجة، البحث، التحليل العميق، ربط Telegram، وتوليد تطبيقات APK.</div>
+      <div class="msg assistant">مرحباً بك في <b>حسين غلاب</b> — المساعد المستقبلي متعدد الأوضاع. اختر وضع التفكير من الشريط أعلاه، أو اكتب سؤالك مباشرة. يمكنني: البرمجة، البحث، التحليل العميق، ربط Telegram، وتوليد تطبيقات APK.</div>
     </div>
 
     <div class="input-wrap">
       <div class="input-shell">
-        <button class="ibtn" onclick="toggleVoice()">🎙</button>
+        <button class="ibtn" onclick="toggleVoice()">◉</button>
         <textarea id="input" placeholder="اكتب رسالتك... (Enter = سطر جديد، Ctrl+Enter = إرسال)" rows="1"></textarea>
       </div>
       <button class="ibtn send" onclick="send()">➤</button>
@@ -357,7 +360,7 @@ var recognition = null;
     o.font = '900 ' + fs + 'px system-ui, sans-serif';
     o.textAlign = 'center'; o.textBaseline = 'middle';
     o.fillStyle = '#fff';
-    o.fillText('ABU OLQ', ow/2, oh/2);
+    o.fillText('HUSSEIN GHALLAB', ow/2, oh/2);
     var img = o.getImageData(0,0,ow,oh);
     targets = [];
     var ox = (W-ow)/2, oy = H/2 - oh/2;
@@ -649,7 +652,7 @@ function linkTelegram(){
   .then(function(r){ return r.json(); })
   .then(function(d){
     if(d.success){
-      $('tg-status').innerHTML = '<span style="color:var(--ok)">✅ تم ربط البوت: @' + (d.bot_username || 'unknown') + '</span>';
+      $('tg-status').innerHTML = '<span style="color:var(--ok)">✓ تم ربط البوت: @' + (d.bot_username || 'unknown') + '</span>';
       addHtml('<span style="color:var(--purple)">◈</span> تم ربط Telegram Bot بنجاح: <b>@' + (d.bot_username||'') + '</b>');
     } else {
       $('tg-status').innerHTML = '<span style="color:var(--danger)">✖ ' + esc(d.message || 'فشل الربط') + '</span>';
@@ -727,7 +730,7 @@ function pollAPK(bid, tries){
       if(!el) return;
       if(d.status === 'ready' && d.apk_url){
         el.innerHTML =
-          '<div style="color:var(--ok);font-weight:700;margin-bottom:8px">✅ التطبيق جاهز!</div>' +
+          '<div style="color:var(--ok);font-weight:700;margin-bottom:8px">✓ التطبيق جاهز!</div>' +
           '<a href="' + d.apk_url + '" download style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#a855f7,#22d3ee);color:#fff;padding:11px 22px;border-radius:24px;text-decoration:none;font-weight:700">↧ تحميل وتثبيت APK</a>' +
           '<div style="font-size:.78rem;color:var(--muted);margin-top:8px">اضغط ← ثبّت ← افتح من قائمة تطبيقاتك</div>';
       } else {
