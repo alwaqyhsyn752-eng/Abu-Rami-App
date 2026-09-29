@@ -111,6 +111,15 @@ async def read_programming(request: Request):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response
 
+@app.get("/admin")
+async def read_admin(request: Request):
+    response = templates.TemplateResponse(
+        request=request, name="admin.html",
+        context={"version": settings.APP_VERSION}
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 
 @app.get("/health")
 async def health_check():

@@ -1,0 +1,778 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""مولّد صفحة إدارة Hussein Ghallab"""
+
+import os
+
+FILES = {}
+
+# ============================================================
+# 1) endpoints/admin.py
+# ============================================================
+FILES["app/api/v1/endpoints/admin.py"] = r'''import os
+import logging
+from datetime import datetime
+from fastapi import APIRouter, Request, HTTPException, Header
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "hussein2026")
+
+
+def check_auth(x_admin_password: str = Header(None, alias="X-Admin-Password")):
+    if not x_admin_password or x_admin_password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="كلمة المرور خاطئة")
+    return True
+
+
+@router.post("/admin/login")
+async def admin_login(req: dict):
+    pwd = (req or {}).get("password", "")
+    if pwd == ADMIN_PASSWORD:
+        return {"success": True, "token": ADMIN_PASSWORD}
+    return {"success": False, "message": "كلمة المرور خاطئة"}
+
+
+@router.get("/admin/overview")
+async def admin_overview(
+    request: Request,
+    x_admin_password: str = Header(None, alias="X-Admin-Password")
+):
+    check_auth(x_admin_password)
+
+    # جلب معلومات النظام
+    import platform
+    import sys
+
+    providers = {
+        "gemini": bool(settings.GEMINI_API_KEY),
+        "groq": bool(settings.GROQ_API_KEY),
+        "openrouter": bool(settings.OPENROUTER_API_KEY),
+        "deepseek": bool(settings.DEEPSEEK_API_KEY),
+    }
+
+    # حالة قاعدة البيانات
+    db_ok = False
+    try:
+        from app.db.engine import engine
+        from sqlalchemy import text
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception as e:
+        logger.warning("DB check failed: %s", e)
+
+    # حالة Redis
+    redis_ok = False
+    try:
+        from app.db.redis import redis_manager
+        redis_ok = redis_manager.client is not None
+    except Exception:
+        pass
+
+    # حالة GitHub Actions
+    gh_token = os.getenv("GITHUB_ACTIONS_TOKEN", "").strip()
+    gh_ok = bool(gh_token)
+
+    # حالة APK builder
+    apk_ready = gh_ok and bool(os.getenv("KEYSTORE_BASE64", "").strip())
+
+    return {
+        "success": True,
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": settings.APP_VERSION,
+        "developer": getattr(settings, "APP_DEVELOPER", "حسين غلاب"),
+        "system": {
+            "python": sys.version.split()[0],
+            "platform": platform.platform(),
+            "machine": platform.machine(),
+            "processor": platform.processor() or "unknown",
+        },
+        "providers": providers,
+        "database": db_ok,
+        "redis": redis_ok,
+        "github_actions": gh_ok,
+        "apk_builder_ready": apk_ready,
+    }
+
+
+@router.get("/admin/env-status")
+async def admin_env_status(
+    x_admin_password: str = Header(None, alias="X-Admin-Password")
+):
+    check_auth(x_admin_password)
+
+    def mask(value: str) -> str:
+        if not value:
+            return ""
+        if len(value) < 10:
+            return "***"
+        return value[:6] + "..." + value[-4:]
+
+    env_keys = [
+        "GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY",
+        "DEEPSEEK_API_KEY", "GITHUB_ACTIONS_TOKEN", "TELEGRAM_BOT_TOKEN",
+        "DATABASE_URL", "REDIS_URL", "ADMIN_PASSWORD",
+    ]
+
+    result = {}
+    for key in env_keys:
+        val = os.getenv(key, "").strip()
+        result[key] = {
+            "set": bool(val),
+            "masked": mask(val) if val else "",
+            "length": len(val) if val else 0,
+        }
+
+    return {"success": True, "env": result}
+
+
+@router.get("/admin/logs")
+async def admin_logs(
+    lines: int = 100,
+    x_admin_password: str = Header(None, alias="X-Admin-Password")
+):
+    check_auth(x_admin_password)
+
+    log_file = "/tmp/hussein.log"
+    if not os.path.isfile(log_file):
+        return {"success": True, "logs": [], "message": "لا يوجد ملف سجل بعد"}
+
+    try:
+        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+            all_lines = f.readlines()
+        last = all_lines[-lines:] if len(all_lines) > lines else all_lines
+        return {"success": True, "logs": [l.rstrip() for l in last]}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/admin/gh-builds")
+async def admin_gh_builds(
+    x_admin_password: str = Header(None, alias="X-Admin-Password")
+):
+    check_auth(x_admin_password)
+
+    gh_token = os.getenv("GITHUB_ACTIONS_TOKEN", "").strip()
+    if not gh_token:
+        return {"success": False, "message": "GITHUB_ACTIONS_TOKEN غير موجود"}
+
+    import httpx
+    owner = "alwaqyhsyn752-eng"
+    repo = "Abu-Rami-App"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            r = await c.get(
+                f"https://api.github.com/repos/{owner}/{repo}/actions/runs?per_page=10",
+                headers={
+                    "Authorization": "Bearer " + gh_token,
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+            if r.status_code != 200:
+                return {"success": False, "message": f"GitHub: {r.status_code}"}
+
+            data = r.json()
+            runs = []
+            for run in data.get("workflow_runs", [])[:10]:
+                runs.append({
+                    "id": run.get("id"),
+                    "name": run.get("name", ""),
+                    "status": run.get("status", ""),
+                    "conclusion": run.get("conclusion", ""),
+                    "created_at": run.get("created_at", ""),
+                    "updated_at": run.get("updated_at", ""),
+                    "html_url": run.get("html_url", ""),
+                    "run_number": run.get("run_number"),
+                })
+            return {"success": True, "runs": runs}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/admin/gh-releases")
+async def admin_gh_releases(
+    x_admin_password: str = Header(None, alias="X-Admin-Password")
+):
+    check_auth(x_admin_password)
+
+    gh_token = os.getenv("GITHUB_ACTIONS_TOKEN", "").strip()
+    if not gh_token:
+        return {"success": False, "message": "التوكن غير موجود"}
+
+    import httpx
+    owner = "alwaqyhsyn752-eng"
+    repo = "Abu-Rami-App"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            r = await c.get(
+                f"https://api.github.com/repos/{owner}/{repo}/releases?per_page=10",
+                headers={
+                    "Authorization": "Bearer " + gh_token,
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+            if r.status_code != 200:
+                return {"success": False, "message": f"GitHub: {r.status_code}"}
+
+            releases = []
+            for rel in r.json():
+                assets = [
+                    {"name": a.get("name"), "url": a.get("browser_download_url"),
+                     "size": a.get("size")}
+                    for a in rel.get("assets", [])
+                ]
+                releases.append({
+                    "tag": rel.get("tag_name"),
+                    "name": rel.get("name"),
+                    "created_at": rel.get("created_at"),
+                    "assets": assets,
+                })
+            return {"success": True, "releases": releases}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.post("/admin/test-provider")
+async def admin_test_provider(
+    req: dict,
+    x_admin_password: str = Header(None, alias="X-Admin-Password")
+):
+    check_auth(x_admin_password)
+
+    provider = (req or {}).get("provider", "gemini")
+    test_prompt = "قل فقط: OK"
+
+    from app.services.ai.router import ai_router
+
+    try:
+        # اختبار مزود محدد
+        from app.services.ai.gemini import GeminiProvider
+        from app.services.ai.groq import GroqProvider
+        from app.services.ai.openrouter import OpenRouterProvider
+        from app.services.ai.deepseek import DeepSeekProvider
+
+        mapping = {
+            "gemini": GeminiProvider(),
+            "groq": GroqProvider(),
+            "openrouter": OpenRouterProvider(),
+            "deepseek": DeepSeekProvider(),
+        }
+
+        p = mapping.get(provider)
+        if not p:
+            return {"success": False, "message": "مزود غير معروف"}
+
+        import time
+        start = time.time()
+        from app.prompts.system_prompt import SYSTEM_PROMPT
+        response = await p.generate(test_prompt, SYSTEM_PROMPT, None, None)
+        elapsed = round(time.time() - start, 2)
+
+        return {
+            "success": True,
+            "provider": provider,
+            "response": (response or "")[:200],
+            "time_seconds": elapsed,
+        }
+    except Exception as e:
+        return {"success": False, "provider": provider, "message": str(e)[:200]}
+'''
+
+# ============================================================
+# 2) templates/admin.html
+# ============================================================
+FILES["templates/admin.html"] = r'''<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0520">
+<title>لوحة الإدارة — حسين غلاب</title>
+<style>
+:root{--bg:#0a0520;--purple:#a855f7;--cyan:#22d3ee;--gold:#fbbf24;--text:#f0f4ff;--muted:#a0aec0;--border:rgba(168,85,247,0.22);--danger:#f87171;--ok:#34d399;--warn:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text)}
+body{display:flex;flex-direction:column;height:100dvh;position:relative}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 15% 0%,rgba(168,85,247,0.18),transparent 50%),radial-gradient(ellipse at 85% 100%,rgba(34,211,238,0.15),transparent 50%)}
+.app{display:flex;flex-direction:column;flex:1;overflow:hidden;position:relative;z-index:1}
+
+/* Login */
+#login{position:fixed;inset:0;z-index:100;background:rgba(10,5,32,0.98);display:flex;align-items:center;justify-content:center;padding:20px}
+#login.hidden{display:none}
+.login-box{width:100%;max-width:380px;background:rgba(18,8,48,0.9);border:1px solid var(--purple);border-radius:18px;padding:28px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(168,85,247,0.3)}
+.login-box h2{color:var(--purple);text-align:center;margin-bottom:20px;letter-spacing:2px}
+.login-box input{width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);padding:14px;color:#fff;border-radius:10px;outline:none;font-size:1rem;text-align:center;letter-spacing:3px;font-family:inherit}
+.login-box input:focus{border-color:var(--purple)}
+.login-box button{width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#a855f7,#22d3ee);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-family:inherit;font-size:1rem}
+.login-msg{text-align:center;color:var(--danger);margin-top:10px;font-size:.85rem;min-height:20px}
+
+/* Topbar */
+.topbar{height:56px;padding:0 14px;background:rgba(18,8,48,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:800;letter-spacing:1.5px;background:linear-gradient(90deg,#a855f7,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1rem}
+.logout{background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);color:#f87171;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:inherit;font-size:.8rem}
+
+/* Tabs */
+.tabs{display:flex;background:rgba(18,8,48,0.6);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:12px 18px;color:var(--muted);cursor:pointer;font-size:.83rem;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit;background:none;border-left:none;border-right:none;border-top:none;transition:.2s}
+.tab.active{color:var(--purple);border-bottom-color:var(--purple);font-weight:700}
+
+/* Content */
+.content{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.panel{display:none}
+.panel.active{display:flex;flex-direction:column;gap:14px}
+
+.card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:16px;backdrop-filter:blur(12px)}
+.card h3{color:var(--purple);margin-bottom:12px;font-size:.95rem;letter-spacing:1px;display:flex;align-items:center;gap:8px;text-transform:uppercase}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat-box{background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-label{font-size:.72rem;color:var(--muted);letter-spacing:1px;margin-bottom:6px}
+.stat-value{font-size:1.2rem;font-weight:800;color:var(--cyan)}
+.stat-value.ok{color:var(--ok)}
+.stat-value.bad{color:var(--danger)}
+.stat-value.warn{color:var(--warn)}
+
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:6px;font-size:.85rem}
+.row .label{color:var(--muted)}
+.row .value{font-family:monospace;color:var(--cyan);font-size:.8rem;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.badge{padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:700}
+.badge.ok{background:rgba(52,211,153,0.2);color:var(--ok)}
+.badge.bad{background:rgba(248,113,113,0.2);color:var(--danger)}
+.badge.warn{background:rgba(251,191,36,0.2);color:var(--warn)}
+
+.btn{padding:10px 16px;background:rgba(168,85,247,0.15);border:1px solid var(--purple);color:var(--purple);border-radius:8px;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:700;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:rgba(168,85,247,0.3)}
+.btn.primary{background:linear-gradient(135deg,#a855f7,#22d3ee);border:none;color:#fff}
+.btn.danger{background:rgba(248,113,113,0.15);border-color:rgba(248,113,113,0.5);color:var(--danger)}
+
+.logs{background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:.75rem;line-height:1.6;color:#9aa9c0;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.logs .err{color:var(--danger)}
+.logs .warn{color:var(--warn)}
+.logs .info{color:var(--cyan)}
+
+.build-item{display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:6px;font-size:.82rem}
+.build-item .name{color:var(--cyan);font-weight:700}
+.build-item .time{color:var(--muted);font-size:.75rem}
+.build-item a{color:var(--purple);text-decoration:none;font-size:.8rem}
+
+.release-item{padding:12px;background:rgba(0,0,0,0.25);border-radius:10px;margin-bottom:8px;border:1px solid var(--border)}
+.release-item .tag{color:var(--gold);font-weight:700;font-size:.9rem}
+.release-item .asset{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(52,211,153,0.08);border-radius:6px;margin-top:6px;font-size:.82rem}
+.release-item .asset a{color:var(--ok);text-decoration:none;font-weight:700}
+
+.loading{text-align:center;color:var(--muted);padding:20px;font-style:italic}
+
+@media(min-width:700px){
+  .content{max-width:1100px;margin:0 auto;width:100%}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h2>&#9670; لوحة الإدارة &#9670;</h2>
+    <div style="color:var(--muted);text-align:center;margin-bottom:16px;font-size:.85rem">حسين غلاب AI</div>
+    <input id="pwd" type="password" placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;" />
+    <button onclick="doLogin()">دخول</button>
+    <div class="login-msg" id="login-msg"></div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">&#9670; لوحة الإدارة — حسين غلاب</div>
+    <button class="logout" onclick="doLogout()">خروج</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">&#9670; نظرة عامة</button>
+    <button class="tab" data-tab="env">&#9881; المفاتيح</button>
+    <button class="tab" data-tab="builds">&#9634; البناء</button>
+    <button class="tab" data-tab="releases">&#9670; الإصدارات</button>
+    <button class="tab" data-tab="test">&#9889; اختبار المزودين</button>
+    <button class="tab" data-tab="logs">&#9776; السجلات</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Overview -->
+    <div class="panel active" id="tab-overview">
+      <div class="card">
+        <h3>&#9670; حالة النظام</h3>
+        <div class="grid" id="overview-grid">
+          <div class="loading">جاري التحميل...</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>&#9670; معلومات الخادم</h3>
+        <div id="sys-info" class="loading">جاري التحميل...</div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn primary" onclick="loadOverview()">&#8635; تحديث</button>
+      </div>
+    </div>
+
+    <!-- Env -->
+    <div class="panel" id="tab-env">
+      <div class="card">
+        <h3>&#9881; حالة مفاتيح البيئة</h3>
+        <div id="env-list" class="loading">جاري التحميل...</div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn primary" onclick="loadEnv()">&#8635; تحديث</button>
+      </div>
+    </div>
+
+    <!-- Builds -->
+    <div class="panel" id="tab-builds">
+      <div class="card">
+        <h3>&#9634; سجل عمليات GitHub Actions</h3>
+        <div id="builds-list" class="loading">جاري التحميل...</div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn primary" onclick="loadBuilds()">&#8635; تحديث</button>
+        <a class="btn" href="https://github.com/alwaqyhsyn752-eng/Abu-Rami-App/actions" target="_blank">فتح Actions</a>
+      </div>
+    </div>
+
+    <!-- Releases -->
+    <div class="panel" id="tab-releases">
+      <div class="card">
+        <h3>&#9670; إصدارات APK</h3>
+        <div id="releases-list" class="loading">جاري التحميل...</div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn primary" onclick="loadReleases()">&#8635; تحديث</button>
+      </div>
+    </div>
+
+    <!-- Test providers -->
+    <div class="panel" id="tab-test">
+      <div class="card">
+        <h3>&#9889; اختبار المزودين</h3>
+        <div class="grid">
+          <button class="btn" onclick="testProvider('gemini')">&#9670; اختبار Gemini</button>
+          <button class="btn" onclick="testProvider('groq')">&#9670; اختبار Groq</button>
+          <button class="btn" onclick="testProvider('openrouter')">&#9670; اختبار OpenRouter</button>
+          <button class="btn" onclick="testProvider('deepseek')">&#9670; اختبار DeepSeek</button>
+        </div>
+        <div id="test-result" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="panel" id="tab-logs">
+      <div class="card">
+        <h3>&#9776; آخر 100 سطر من السجل</h3>
+        <div class="logs" id="logs-view">جاري التحميل...</div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn primary" onclick="loadLogs()">&#8635; تحديث</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+var $ = function(id){ return document.getElementById(id) };
+var ADMIN_TOKEN = "";
+
+/* Login */
+function doLogin(){
+  var pwd = $('pwd').value;
+  if(!pwd){ $('login-msg').innerText = "أدخل كلمة المرور"; return; }
+  $('login-msg').innerText = "جاري التحقق...";
+  fetch('/v1/admin/login', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({password:pwd})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.success){
+      ADMIN_TOKEN = d.token;
+      try { localStorage.setItem('admin_token', ADMIN_TOKEN); } catch(e){}
+      $('login').classList.add('hidden');
+      loadOverview();
+    } else {
+      $('login-msg').innerText = d.message || "خطأ";
+    }
+  })
+  .catch(function(){
+    $('login-msg').innerText = "تعذر الاتصال بالخادم";
+  });
+}
+
+function doLogout(){
+  ADMIN_TOKEN = "";
+  try { localStorage.removeItem('admin_token'); } catch(e){}
+  location.reload();
+}
+
+/* Auto-login if token saved */
+window.addEventListener('load', function(){
+  try {
+    var saved = localStorage.getItem('admin_token');
+    if(saved){
+      ADMIN_TOKEN = saved;
+      $('login').classList.add('hidden');
+      loadOverview();
+    }
+  } catch(e){}
+});
+
+/* Tabs */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.onclick = function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    t.classList.add('active');
+    $('tab-' + t.dataset.tab).classList.add('active');
+
+    var tab = t.dataset.tab;
+    if(tab === 'overview') loadOverview();
+    else if(tab === 'env') loadEnv();
+    else if(tab === 'builds') loadBuilds();
+    else if(tab === 'releases') loadReleases();
+    else if(tab === 'logs') loadLogs();
+  };
+});
+
+function apiGet(path){
+  return fetch(path, {
+    headers:{'X-Admin-Password': ADMIN_TOKEN}
+  }).then(function(r){
+    if(r.status === 401){ doLogout(); throw new Error("انتهت الجلسة"); }
+    return r.json();
+  });
+}
+
+/* Overview */
+function loadOverview(){
+  var grid = $('overview-grid');
+  grid.innerHTML = '<div class="loading">جاري التحميل...</div>';
+
+  apiGet('/v1/admin/overview')
+    .then(function(d){
+      if(!d.success){ grid.innerHTML = '<div class="loading" style="color:#f87171">خطأ</div>'; return; }
+
+      function stat(label, value, cls){
+        return '<div class="stat-box"><div class="stat-label">' + label + '</div><div class="stat-value ' + (cls||'') + '">' + value + '</div></div>';
+      }
+
+      var html = '';
+      html += stat("الحالة", "متصل", "ok");
+      html += stat("الإصدار", d.version || "-");
+      html += stat("قاعدة البيانات", d.database ? "✓" : "✖", d.database ? "ok" : "bad");
+      html += stat("Redis", d.redis ? "✓" : "✖", d.redis ? "ok" : "warn");
+      html += stat("GitHub Actions", d.github_actions ? "✓" : "✖", d.github_actions ? "ok" : "bad");
+      html += stat("APK Builder", d.apk_builder_ready ? "✓" : "✖", d.apk_builder_ready ? "ok" : "warn");
+
+      grid.innerHTML = html;
+
+      var sys = d.system || {};
+      $('sys-info').innerHTML =
+        '<div class="row"><span class="label">Python</span><span class="value">' + (sys.python||'-') + '</span></div>' +
+        '<div class="row"><span class="label">المنصة</span><span class="value">' + (sys.platform||'-') + '</span></div>' +
+        '<div class="row"><span class="label">المعالج</span><span class="value">' + (sys.machine||'-') + '</span></div>' +
+        '<div class="row"><span class="label">المطوّر</span><span class="value">' + (d.developer||'-') + '</span></div>' +
+        '<div class="row"><span class="label">آخر تحديث</span><span class="value">' + (d.timestamp||'').substring(0,19) + '</span></div>';
+
+      // Provider status in system card
+      var p = d.providers || {};
+      var provHtml = '<h3 style="margin-top:14px">&#9670; المزوّدون</h3>';
+      ['gemini','groq','openrouter','deepseek'].forEach(function(k){
+        var ok = p[k];
+        provHtml += '<div class="row"><span class="label">' + k + '</span><span class="badge ' + (ok?'ok':'bad') + '">' + (ok?'مفعّل':'معطل') + '</span></div>';
+      });
+      $('sys-info').innerHTML += provHtml;
+    })
+    .catch(function(e){ grid.innerHTML = '<div class="loading" style="color:#f87171">' + e.message + '</div>'; });
+}
+
+/* Env */
+function loadEnv(){
+  var el = $('env-list');
+  el.innerHTML = '<div class="loading">جاري التحميل...</div>';
+  apiGet('/v1/admin/env-status')
+    .then(function(d){
+      if(!d.success){ el.innerHTML = '<div class="loading" style="color:#f87171">خطأ</div>'; return; }
+      var html = '';
+      var env = d.env || {};
+      Object.keys(env).forEach(function(k){
+        var info = env[k];
+        html += '<div class="row">' +
+          '<span class="label">' + k + '</span>' +
+          '<span class="value">' + (info.set ? info.masked : '<span style="color:#f87171">غير موجود</span>') + '</span>' +
+          '</div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function(e){ el.innerHTML = '<div class="loading" style="color:#f87171">' + e.message + '</div>'; });
+}
+
+/* Builds */
+function loadBuilds(){
+  var el = $('builds-list');
+  el.innerHTML = '<div class="loading">جاري التحميل...</div>';
+  apiGet('/v1/admin/gh-builds')
+    .then(function(d){
+      if(!d.success){ el.innerHTML = '<div class="loading" style="color:#f87171">' + (d.message||'خطأ') + '</div>'; return; }
+      var runs = d.runs || [];
+      if(runs.length === 0){ el.innerHTML = '<div class="loading">لا يوجد بناء بعد</div>'; return; }
+      var html = '';
+      runs.forEach(function(r){
+        var statusCls = r.conclusion === 'success' ? 'ok' : (r.conclusion === 'failure' ? 'bad' : 'warn');
+        html += '<div class="build-item">' +
+          '<div>' +
+            '<div class="name">#' + r.run_number + ' — ' + r.name + '</div>' +
+            '<div class="time">' + (r.created_at||'').substring(0,19).replace('T',' ') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center">' +
+            '<span class="badge ' + statusCls + '">' + (r.conclusion || r.status) + '</span>' +
+            '<a href="' + r.html_url + '" target="_blank">فتح</a>' +
+          '</div>' +
+        '</div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function(e){ el.innerHTML = '<div class="loading" style="color:#f87171">' + e.message + '</div>'; });
+}
+
+/* Releases */
+function loadReleases(){
+  var el = $('releases-list');
+  el.innerHTML = '<div class="loading">جاري التحميل...</div>';
+  apiGet('/v1/admin/gh-releases')
+    .then(function(d){
+      if(!d.success){ el.innerHTML = '<div class="loading" style="color:#f87171">' + (d.message||'خطأ') + '</div>'; return; }
+      var releases = d.releases || [];
+      if(releases.length === 0){ el.innerHTML = '<div class="loading">لا توجد إصدارات بعد</div>'; return; }
+      var html = '';
+      releases.forEach(function(rel){
+        html += '<div class="release-item">' +
+          '<div class="tag">&#9670; ' + (rel.tag||'') + '</div>' +
+          '<div style="color:var(--muted);font-size:.75rem;margin-top:4px">' + (rel.created_at||'').substring(0,19).replace('T',' ') + '</div>';
+        (rel.assets||[]).forEach(function(a){
+          var sizeMb = a.size ? (a.size/1024/1024).toFixed(2) + ' MB' : '';
+          html += '<div class="asset">' +
+            '<span>' + a.name + ' <small style="color:var(--muted)">' + sizeMb + '</small></span>' +
+            '<a href="' + a.url + '" download>تحميل</a>' +
+          '</div>';
+        });
+        html += '</div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function(e){ el.innerHTML = '<div class="loading" style="color:#f87171">' + e.message + '</div>'; });
+}
+
+/* Test Provider */
+function testProvider(name){
+  var el = $('test-result');
+  el.innerHTML = '<div class="loading">جاري اختبار ' + name + '...</div>';
+  fetch('/v1/admin/test-provider', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Admin-Password': ADMIN_TOKEN},
+    body: JSON.stringify({provider:name})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.success){
+      el.innerHTML = '<div class="card" style="border-color:rgba(52,211,153,0.5);background:rgba(52,211,153,0.08)">' +
+        '<div style="color:#34d399;font-weight:700;margin-bottom:8px">&#10003; ' + d.provider + ' يعمل</div>' +
+        '<div style="font-size:.85rem;color:var(--muted)">الرد: ' + (d.response||'') + '</div>' +
+        '<div style="font-size:.8rem;color:var(--cyan);margin-top:6px">الزمن: ' + d.time_seconds + ' ثانية</div>' +
+      '</div>';
+    } else {
+      el.innerHTML = '<div class="card" style="border-color:rgba(248,113,113,0.5);background:rgba(248,113,113,0.08)">' +
+        '<div style="color:#f87171;font-weight:700;margin-bottom:8px">&#10007; ' + d.provider + ' فشل</div>' +
+        '<div style="font-size:.85rem;color:var(--muted)">' + (d.message||'') + '</div>' +
+      '</div>';
+    }
+  })
+  .catch(function(e){
+    el.innerHTML = '<div class="card" style="border-color:rgba(248,113,113,0.5)">' + e.message + '</div>';
+  });
+}
+
+/* Logs */
+function loadLogs(){
+  var el = $('logs-view');
+  el.innerHTML = 'جاري التحميل...';
+  apiGet('/v1/admin/logs?lines=100')
+    .then(function(d){
+      if(!d.success){ el.innerText = d.message || 'خطأ'; return; }
+      var logs = d.logs || [];
+      if(logs.length === 0){ el.innerText = d.message || 'لا يوجد سجل'; return; }
+      var html = '';
+      logs.forEach(function(l){
+        var cls = 'info';
+        if(l.indexOf('[ERROR]') > -1 || l.indexOf('Error') > -1) cls = 'err';
+        else if(l.indexOf('[WARNING]') > -1 || l.indexOf('WARNING') > -1) cls = 'warn';
+        html += '<div class="' + cls + '">' + l.replace(/</g,'&lt;') + '</div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function(e){ el.innerText = e.message; });
+}
+</script>
+
+</body>
+</html>
+'''
+
+# ============================================================
+# 3) تحديث router.py
+# ============================================================
+FILES["app/api/v1/router.py"] = r'''from fastapi import APIRouter
+from app.api.v1.endpoints import chat, system, abu_olq, admin
+
+api_router = APIRouter()
+api_router.include_router(admin.router, tags=["admin"])
+api_router.include_router(abu_olq.router, tags=["abu-olq"])
+api_router.include_router(chat.router, tags=["chat"])
+api_router.include_router(system.router, tags=["system"])
+'''
+
+
+def main():
+    print("=" * 65)
+    print("توليد لوحة الإدارة — Hussein Ghallab Admin Panel")
+    print("=" * 65)
+
+    count = 0
+    for path, content in FILES.items():
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content if content.endswith("\n") else content + "\n")
+        print(" [+] " + path)
+        count += 1
+
+    print("=" * 65)
+    print("اكتمل التوليد! عدد الملفات: " + str(count))
+    print("=" * 65)
+    print("الخطوة التالية:")
+    print("  1) أضف ADMIN_PASSWORD في Render Environment")
+    print("  2) python -m compileall app")
+    print("  3) git add -A && git commit -m 'Admin panel'")
+    print("  4) git push origin main --force")
+    print("  5) Manual Deploy")
+    print("  6) افتح: /admin")
+    print("=" * 65)
+
+
+if __name__ == "__main__":
+    main()
