@@ -68,6 +68,15 @@ async def read_root(request: Request):
     response.headers["Expires"] = "0"
     return response
 
+@app.get("/olq")
+async def read_olq(request: Request):
+    response = templates.TemplateResponse(
+        request=request, name="abu_olq.html",
+        context={"version": settings.APP_VERSION}
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 
 @app.get("/health")
 async def health_check():
