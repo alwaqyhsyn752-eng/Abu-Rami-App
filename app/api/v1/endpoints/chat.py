@@ -126,3 +126,65 @@ async def generate_video(req: dict):
         "message": "توليد الفيديو قيد التطوير. سيتم تفعيله في تحديث قادم.",
         "prompt": prompt,
     }
+import uuid as _uuid
+from app.services.apk_builder import apk_builder
+from app.db.engine import AsyncSessionLocal
+
+
+@router.post("/generate/apk-real")
+async def generate_real_apk(req: dict):
+    app_name = (req or {}).get("app_name", "").strip()
+    description = (req or {}).get("description", "").strip()
+    if not app_name or not description:
+        return {"success": False, "message": "أدخل الاسم والوصف"}
+
+    from app.services.chat_service import ChatService
+
+    async with AsyncSessionLocal() as db:
+        service = ChatService(db)
+        prompt = (
+            "أنشئ تطبيق ويب كامل بصفحة HTML واحدة (HTML+CSS+JS inline) لـ:\n"
+            "الاسم: " + app_name + "\n"
+            "الوصف: " + description + "\n"
+            "أعد فقط كود HTML كاملاً بدون شرح. اجعله جميلاً ويعمل offline. "
+            "استخدم ألواناً داكنة مع لمسات سماوية (cyan #06b6d4)."
+        )
+        res = await service.process_chat(prompt)
+        html = res["message"]
+
+    if "```html" in html:
+        html = html.split("```html")[1].split("```")[0]
+    elif "```" in html:
+        html = html.split("```")[1].split("```")[0]
+    html = html.strip()
+
+    if "<!DOCTYPE" not in html and "<html" not in html:
+        html = (
+            "<!DOCTYPE html><html lang='ar' dir='rtl'><head>"
+            "<meta charset='UTF-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>" + app_name + "</title></head><body>"
+            + html + "</body></html>"
+        )
+
+    build_id = "a" + _uuid.uuid4().hex[:11]
+
+    try:
+        await apk_builder.trigger_build(app_name, html, build_id)
+    except Exception as e:
+        return {"success": False, "message": "تعذر بدء البناء: " + str(e)[:200]}
+
+    return {
+        "success": True,
+        "build_id": build_id,
+        "app_name": app_name,
+        "status": "building",
+    }
+
+
+@router.get("/generate/apk-status/{build_id}")
+async def apk_status(build_id: str):
+    url = await apk_builder.poll_build(build_id, timeout=15)
+    if url:
+        return {"success": True, "status": "ready", "apk_url": url}
+    return {"success": True, "status": "building"}
