@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     DEEPSEEK_API_KEY: str = ""
 
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
-    OPENROUTER_MODEL: str = "google/gemini-2.0-flash-exp:free"
+    vOPENROUTER_MODEL: str = "google/gemini-2.0-flash-exp:free"
     DEEPSEEK_MODEL: str = "deepseek-chat"
 
     DATABASE_URL: str = ""

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class AIRouter:
     def __init__(self):
+        # الترتيب حسب السرعة والموثوقية
         self.providers = [
             ("gemini", GeminiProvider()),
             ("groq", GroqProvider()),
@@ -32,15 +33,17 @@ class AIRouter:
                     prompt, SYSTEM_PROMPT, image_base64, media_type
                 )
                 if response and response.strip():
+                    logger.info("Provider %s succeeded", name)
                     return response, name
-                errors.append(name + ": empty")
+                errors.append(name + ": empty response")
             except Exception as e:
-                logger.warning("Provider %s failed: %s", name, e)
-                errors.append(name + ": " + str(e)[:80])
+                logger.warning("Provider %s failed: %s", name, str(e)[:150])
+                errors.append(name + ": " + str(e)[:100])
 
         logger.error("All providers failed: %s", errors)
         return (
-            "عذراً، تعذر الاتصال بخادم الذكاء الاصطناعي. حاول مرة أخرى بعد قليل.",
+            "عذراً، تعذر الاتصال بخادم الذكاء الاصطناعي. "
+            "تحقق من مفاتيح API في Render Environment.",
             "none",
         )
 
